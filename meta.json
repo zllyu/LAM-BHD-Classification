@@ -1,0 +1,8 @@
+{
+  "name": "LAM_BHD_fedavg",
+  "resource_spec": {},
+  "min_clients": 2,
+  "deploy_map": {
+    "app": ["@ALL"]
+  }
+}

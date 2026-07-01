@@ -1,0 +1,39 @@
+# Python/cache artifacts
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.ipynb_checkpoints/
+
+# Local environments and secrets
+.venv/
+venv/
+.env
+.env.*
+
+# Local data, outputs, and model artifacts
+data/
+outputs/
+nvflare_jobs/
+runs/
+mlruns/
+wandb/
+*.pt
+*.pth
+*.ckpt
+*.onnx
+*.npy
+*.npz
+*.nrrd
+*.nhdr
+
+# Packaging/build artifacts
+build/
+dist/
+*.egg-info/
+
+# Editor/OS files
+.vscode/
+.DS_Store
