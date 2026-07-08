@@ -59,7 +59,11 @@ def main() -> None:
     site_name = sys_info.get("site_name", "unknown")
 
     partition_index = args.partition_index
-    if args.num_partitions > 1 and partition_index < 0:
+    if args.num_partitions < 1:
+        raise ValueError("--num-partitions must be >= 1")
+    if args.num_partitions == 1:
+        partition_index = 0
+    elif partition_index < 0:
         partition_index = infer_partition_index(site_name, args.num_partitions)
 
     train_loader, val_loader, _, summary = build_dataloaders(
