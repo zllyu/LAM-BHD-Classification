@@ -5,10 +5,8 @@
       "id": "controller",
       "path": "nvflare.app_common.workflows.fedavg.FedAvg",
       "args": {
-        "num_clients": 2,
-        "num_rounds": 2,
-        "task_name": "train",
-        "enable_tensor_disk_offload": false
+        "num_clients": 1,
+        "num_rounds": 2
       }
     }
   ],

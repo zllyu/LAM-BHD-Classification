@@ -192,7 +192,9 @@ def partition_records(
     partition_index: int = 0,
     seed: int = 42,
 ) -> tuple[list[Path], list[int]]:
-    if num_partitions <= 1:
+    if num_partitions < 1:
+        raise ValueError("num_partitions must be >= 1")
+    if num_partitions == 1:
         return list(files), list(labels)
     if partition_index < 0 or partition_index >= num_partitions:
         raise ValueError("partition_index must be between 0 and num_partitions - 1")

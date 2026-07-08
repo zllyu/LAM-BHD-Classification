@@ -274,7 +274,7 @@ CPU smoke test:
 
 ```bash
 python LAM_BHD_job.py \
-  --n-clients 2 \
+  --n-clients 1 \
   --num-rounds 1 \
   --epochs 1 \
   --batch-size 16 \
@@ -288,7 +288,7 @@ FL parameters:
 | Parameter | Default | Meaning |
 | --- | --- | --- |
 | `--job-name` | `LAM_BHD_fedavg` | NVFlare job/simulation folder name. |
-| `--n-clients` | `2` | Number of simulated clients. |
+| `--n-clients` | `1` | Number of simulated clients. |
 | `--num-rounds` | `2` | Federated aggregation rounds. |
 | `--epochs` | `1` | Local epochs per client per FL round. |
 | `--batch-size` | `2` | Client batch size. |
@@ -301,7 +301,7 @@ FL parameters:
 | `--device` | `auto` | Client training device. |
 | `--num-threads` | `0` | Simulator threads; `0` means number of clients. |
 | `--gpu-config` | empty | NVFlare simulator GPU config. |
-| `--partition-sites` | enabled | Stratified split of one dataset across clients. |
+| `--partition-sites` | enabled | Stratified split of one dataset across clients when `--n-clients > 1`; no-op for one client. |
 | `--no-partition-sites` | disabled | Every client uses the full dataset. |
 | `--export` | disabled | Export NVFlare job instead of running. |
 | `--export-dir` | `/tmp/nvflare_jobs/lam_bhd` | Export destination. |
@@ -361,13 +361,28 @@ requirements.txt
 Build/push image:
 
 ```bash
-./docker-push.sh <image-repo-name> <docker-image-tag>
+AWS_PROFILE=rhino ./docker-push.sh <workgroup-ecr-repository> <image-tag>
+```
+
+`<workgroup-ecr-repository>` is the Workgroup ECR repository shown in Rhino Settings / Containers & Artifacts. For `dashboard.rhinohealth.com`, the script defaults to Rhino's documented AWS production registry:
+
+```text
+865551847959.dkr.ecr.us-east-1.amazonaws.com
 ```
 
 Example:
 
 ```bash
-./docker-push.sh lam-bhd-control-nvflare v1
+AWS_PROFILE=rhino ./docker-push.sh <workgroup-ecr-repository> v1.0
+```
+
+If Rhino shows a different registry for your workgroup, pass it explicitly:
+
+```bash
+AWS_PROFILE=rhino ./docker-push.sh \
+  --image-registry <registry-host> \
+  <workgroup-ecr-repository> \
+  v1.0
 ```
 
 Use the printed container image URI in Rhino.
@@ -402,7 +417,7 @@ app/config/config_fed_server.json
 Current server settings:
 
 ```text
-num_clients = 2
+num_clients = 1
 num_rounds = 2
 global_model_file_name = /output/model_parameters.pt
 model = model.Net(num_classes=3)
@@ -417,9 +432,21 @@ meta.json
 Current metadata:
 
 ```text
-min_clients = 2
+min_clients = 1
 deploy_map = app -> @ALL
 ```
+
+The checked-in Rhino config is valid for one client and is intended to be the default image config. Leave `meta.json` `min_clients = 1` so the same code object can run single-client jobs.
+
+To run N clients from the same image, do not rebuild just to change the client count. On the Rhino Run Model Training page:
+
+1. Select the N participating site datasets under Training Datasets.
+2. Copy the full contents of `app/config/config_fed_server.json` into Federated Server Config Override.
+3. Change only `workflows[0].args.num_clients` to N.
+
+The selected training clients/datasets must match `num_clients`. If fewer clients are selected, FedAvg can wait until timeout. If more clients are selected, the server only requires `num_clients` client results for aggregation.
+
+For SDK runs, set `ModelTrainInput.config_fed_server` to the same full JSON string. Rhino documents this override in the NVFlare run guide: https://docs.rhinohealth.com/hc/en-us/articles/12522228144669-Running-NVFlare-Code
 
 Rhino inputs:
 

@@ -15,7 +15,7 @@ from model import Net
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Run or export local NVFlare FedAvg for LAM/BHD/Control classification.")
     parser.add_argument("--job-name", default="LAM_BHD_fedavg")
-    parser.add_argument("--n-clients", "--n_clients", type=int, default=2)
+    parser.add_argument("--n-clients", "--n_clients", type=int, default=1)
     parser.add_argument("--num-rounds", "--num_rounds", type=int, default=2)
     parser.add_argument("--epochs", type=int, default=1, help="Local epochs per federated round.")
     parser.add_argument("--batch-size", "--batch_size", type=int, default=2)
@@ -33,7 +33,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--partition-sites", action=argparse.BooleanOptionalAction, default=True)
     parser.add_argument("--export", action="store_true", help="Export the NVFlare job instead of running simulation.")
     parser.add_argument("--export-dir", default="/tmp/nvflare_jobs/lam_bhd")
-    return parser.parse_args()
+    args = parser.parse_args()
+    if args.n_clients < 1:
+        parser.error("--n-clients must be >= 1")
+    if args.num_rounds < 1:
+        parser.error("--num-rounds must be >= 1")
+    return args
 
 
 def build_train_args(args: argparse.Namespace) -> str:
@@ -57,7 +62,7 @@ def build_train_args(args: argparse.Namespace) -> str:
         "--device",
         args.device,
     ]
-    if args.partition_sites:
+    if args.partition_sites and args.n_clients > 1:
         parts.extend(["--num-partitions", str(args.n_clients), "--partition-index", "-1"])
     return " ".join(shlex.quote(part) for part in parts)
 

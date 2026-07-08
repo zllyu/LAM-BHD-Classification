@@ -2,18 +2,20 @@
 set -eu -o pipefail
 
 function usage() {
-  echo "Usage: $0 [OPTIONS] <image-repo-name> <docker-image-tag>"
+  echo "Usage: $0 [OPTIONS] <workgroup-repository-name> <image-tag>"
   echo
   echo "Available options:"
   echo " -f FILE                Dockerfile to use for building the container image."
   echo ' --progress STYLE       Output style to pass to `docker build`: auto (default) or plain.'
   echo " --rhino-domain DOMAIN  Domain to use for the registry: rhinohealth.com (default) or rhinofcp.com."
-  echo " --image_registry URI   URI of an image registry to use instead of the default one derived from the domain."
+  echo " --image-registry URI   URI of an image registry to use instead of the default one derived from the domain."
+  echo " --image_registry URI   Alias for --image-registry."
 }
 
 # Default values
 default_rhino_domain="rhinohealth.com"
 rhino_domain="${RHINO_DOMAIN:-$default_rhino_domain}" # Use env variable if set, otherwise use default.
+image_registry="${IMAGE_REGISTRY:-}"
 docker_build_args=()
 
 while [[ $# -ne 0 ]] && [[ "$1" == -* ]]; do
@@ -40,7 +42,7 @@ while [[ $# -ne 0 ]] && [[ "$1" == -* ]]; do
     [ $# -eq 0 ] && usage && exit 1
     rhino_domain="$1"
     ;;
-    --image_registry)
+  --image-registry|--image_registry)
     shift
     [ $# -eq 0 ] && usage && exit 1
     image_registry="$1"
@@ -59,7 +61,7 @@ if [ $# -lt 2 ]; then
   exit 1
 fi
 
-image_repo_name="$1"
+workgroup_repository_name="$1"
 docker_image_tag="$2"
 gcp_project_id="${3:-rhino-health-prod}" # Default gcp_project_id to "rhino-health-prod" if not provided.
 
@@ -71,10 +73,11 @@ fi
 
 # Set the container_image_uri based on rhino_domain
 if [[ "$rhino_domain" == "rhinohealth.com" ]]; then
-  container_image_uri="${image_registry:-913123821419.dkr.ecr.us-east-1.amazonaws.com}/$image_repo_name:$docker_image_tag"
+  # AWS production registry for dashboard.rhinohealth.com, per Rhino FCP docs.
+  container_image_uri="${image_registry:-865551847959.dkr.ecr.us-east-1.amazonaws.com}/$workgroup_repository_name:$docker_image_tag"
 else
   # In gcp, the image registry is specific to the project (as opposed to AWS where it's all under the infra account).
-  container_image_uri="${image_registry:-europe-west4-docker.pkg.dev}/$gcp_project_id/$image_repo_name/images:$docker_image_tag"
+  container_image_uri="${image_registry:-europe-west4-docker.pkg.dev}/$gcp_project_id/$workgroup_repository_name/images:$docker_image_tag"
 fi
 
 docker_build_base_cmd=(docker build --platform linux/amd64)
